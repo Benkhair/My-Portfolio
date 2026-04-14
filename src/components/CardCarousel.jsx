@@ -120,31 +120,21 @@ function CardCarousel({ projects = [], palette, isDark, onSelectProject }) {
       <div
         style={{
           textAlign: "center",
-          marginBottom: isMobile ? "1rem" : "1.3rem",
+          marginBottom: isMobile ? "1rem" : "1.4rem",
         }}
       >
         <p
           style={{
             margin: 0,
             color: palette.accent,
-            fontSize: isMobile ? "0.92rem" : "1.05rem",
+            fontSize: isMobile ? "1.15rem" : "1.55rem",
             fontWeight: 700,
-            letterSpacing: "0.18em",
+            letterSpacing: "0.16em",
             textTransform: "uppercase",
+            lineHeight: 1.1,
           }}
         >
           PROJECT SHOWCASE
-        </p>
-        <p
-          style={{
-            margin: "0.55rem auto 0",
-            maxWidth: "46ch",
-            color: palette.subText,
-            lineHeight: 1.7,
-            fontSize: isMobile ? "0.9rem" : "0.98rem",
-          }}
-        >
-          A circular 3D carousel of selected projects from my portfolio.
         </p>
       </div>
 
