@@ -48,14 +48,14 @@ function Header({ theme, setTheme }) {
         warm: "#c08b65",
       }
     : {
-        text: "#1f2529",
-        subText: "#5f696c",
-        panel: "rgba(252, 248, 241, 0.74)",
-        panelStrong: "rgba(247, 240, 230, 0.92)",
-        border: "rgba(54, 62, 67, 0.1)",
-        accent: "#6f8f7a",
-        accentSoft: "#9cb4a5",
-        warm: "#b67d58",
+        text: "#0f1419",
+        subText: "#5a6b7a",
+        panel: "rgba(248, 250, 255, 0.8)",
+        panelStrong: "rgba(240, 245, 255, 0.95)",
+        border: "rgba(100, 150, 220, 0.15)",
+        accent: "#3b82f6",
+        accentSoft: "#60a5ff",
+        warm: "#f97316",
       };
 
   return (
@@ -256,62 +256,6 @@ function Header({ theme, setTheme }) {
               )}
             </NavLink>
           </nav>
-
-          {/* RIGHT ACTIONS - SOCIAL LINKS */}
-          <div style={{ display: "flex", gap: "0.6rem" }}>
-            <motion.a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.12, y: -3 }}
-              whileTap={{ scale: 0.92 }}
-              style={{
-                width: compact ? "2.35rem" : "2.6rem",
-                height: compact ? "2.35rem" : "2.6rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "12px",
-                background: palette.panel,
-                border: `1.5px solid ${palette.accent}`,
-                color: palette.accent,
-                textDecoration: "none",
-                transition: "all 0.6s cubic-bezier(0.22, 1, 0.36, 1)",
-                cursor: "pointer",
-                position: "relative",
-                overflow: "hidden",
-              }}
-              title="GitHub"
-            >
-              <GitBranch size={20} strokeWidth={1.5} />
-            </motion.a>
-            <motion.a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.12, y: -3 }}
-              whileTap={{ scale: 0.92 }}
-              style={{
-                width: compact ? "2.35rem" : "2.6rem",
-                height: compact ? "2.35rem" : "2.6rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "12px",
-                background: palette.panel,
-                border: `1.5px solid ${palette.accent}`,
-                color: palette.accent,
-                textDecoration: "none",
-                transition: "all 0.6s cubic-bezier(0.22, 1, 0.36, 1)",
-                cursor: "pointer",
-                position: "relative",
-                overflow: "hidden",
-              }}
-              title="LinkedIn"
-            >
-              <Briefcase size={20} strokeWidth={1.5} />
-            </motion.a>
-          </div>
 
           {/* THEME TOGGLE - WITH SPACING */}
           <div style={{ display: "flex", gap: "1.2rem", alignItems: "center" }}>

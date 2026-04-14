@@ -53,19 +53,19 @@ function Home() {
           "linear-gradient(120deg, rgba(96, 165, 255, 0.05), transparent 45%), linear-gradient(300deg, rgba(96, 165, 255, 0.08), transparent 40%)",
       }
     : {
-        text: "#1a2a4a",
-        subText: "#4a6a9a",
-        panel: "rgba(230, 240, 255, 0.7)",
-        panelStrong: "rgba(220, 235, 255, 0.9)",
-        border: "rgba(96, 165, 255, 0.2)",
-        accent: "#4a8fdd",
+        text: "#0f1419",
+        subText: "#5a6b7a",
+        panel: "rgba(248, 250, 255, 0.75)",
+        panelStrong: "rgba(240, 245, 255, 0.95)",
+        border: "rgba(100, 150, 220, 0.15)",
+        accent: "#3b82f6",
         accentSoft: "#60a5ff",
-        warm: "#ff7a5c",
-        shadow: "0 30px 80px rgba(96, 165, 255, 0.15)",
+        warm: "#f97316",
+        shadow: "0 30px 80px rgba(59, 130, 246, 0.1)",
         background:
-          "radial-gradient(circle at top left, rgba(96, 165, 255, 0.2), transparent 35%), radial-gradient(circle at 90% 18%, rgba(255, 122, 92, 0.15), transparent 28%), linear-gradient(135deg, #f0f5ff 0%, #e5f0ff 45%, #dae8ff 100%)",
+          "radial-gradient(circle at top left, rgba(59, 130, 246, 0.08), transparent 35%), radial-gradient(circle at 90% 18%, rgba(249, 115, 22, 0.08), transparent 28%), linear-gradient(135deg, #f8faff 0%, #f0f7ff 45%, #e8f2ff 100%)",
         mesh:
-          "linear-gradient(120deg, rgba(96, 165, 255, 0.08), transparent 48%), linear-gradient(300deg, rgba(96, 165, 255, 0.1), transparent 40%)",
+          "linear-gradient(120deg, rgba(59, 130, 246, 0.06), transparent 48%), linear-gradient(300deg, rgba(59, 130, 246, 0.08), transparent 40%)",
       };
 
 
@@ -281,28 +281,6 @@ function Home() {
               whileHover={{ scale: 1.02 }}
             >
               <img src={profile} alt="Benkhair Najir" style={styles.image} />
-            </motion.div>
-
-            <motion.div
-              style={{
-                position: "absolute",
-                bottom: "-1rem",
-                right: "-1rem",
-                padding: "1rem 1.5rem",
-                background: "linear-gradient(135deg, #ff6b6b 0%, #ff8c42 50%, #ffd93d 100%)",
-                borderRadius: "20px",
-                color: "#1a1a1a",
-                fontWeight: 700,
-                fontSize: "0.95rem",
-                boxShadow: `0 15px 40px rgba(255, 107, 107, 0.4), 0 0 20px rgba(255, 107, 107, 0.3)`,
-                border: "2px solid rgba(255, 255, 255, 0.2)",
-              }}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-              whileHover={{ scale: 1.15, y: -8, boxShadow: `0 20px 50px rgba(255, 107, 107, 0.5), 0 0 30px rgba(255, 107, 107, 0.4)` }}
-            >
-              ✨ Available for Work
             </motion.div>
 
           </motion.div>

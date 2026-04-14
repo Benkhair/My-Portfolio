@@ -6,7 +6,7 @@ import {
   Globe, Cog, Smartphone,
   Lightbulb, Zap, Sparkles,
   MapPin, Phone, Cake, Gamepad2, Palette,
-  ArrowLeft, ExternalLink, Code, ChevronLeft, ChevronRight,
+  ArrowLeft, ExternalLink, Code, ChevronLeft, ChevronRight, Mail,
 } from "lucide-react";
 
 const projects = [
@@ -204,6 +204,20 @@ const skillCategories = [
   },
 ];
 
+const adjustColorForLight = (hexColor) => {
+  const hex = hexColor.replace("#", "");
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  
+  if (brightness > 180) {
+    return `hsl(${Math.round(Math.atan2(Math.sqrt(3) * (g - b), 2 * r - g - b) * 180 / Math.PI)}, 80%, 35%)`;
+  }
+  return hexColor;
+};
+
 function Portfolio() {
   const navigate = useNavigate();
   const { theme } = useOutletContext();
@@ -246,21 +260,21 @@ function Portfolio() {
           "linear-gradient(120deg, rgba(96, 165, 255, 0.05), transparent 45%), linear-gradient(300deg, rgba(96, 165, 255, 0.08), transparent 40%)",
       }
     : {
-        text: "#1a2a4a",
-        subText: "#4a6a9a",
-        panel: "rgba(230, 240, 255, 0.7)",
-        panelStrong: "rgba(220, 235, 255, 0.9)",
-        border: "rgba(96, 165, 255, 0.2)",
-        accent: "#4a8fdd",
+        text: "#0f1419",
+        subText: "#5a6b7a",
+        panel: "rgba(248, 250, 255, 0.75)",
+        panelStrong: "rgba(240, 245, 255, 0.95)",
+        border: "rgba(100, 150, 220, 0.15)",
+        accent: "#3b82f6",
         accentSoft: "#60a5ff",
-        warm: "#ff7a5c",
-        chipBg: "rgba(96, 165, 255, 0.15)",
-        shadow: "0 30px 80px rgba(96, 165, 255, 0.15)",
-        overlay: "rgba(26, 42, 74, 0.3)",
+        warm: "#f97316",
+        chipBg: "rgba(59, 130, 246, 0.12)",
+        shadow: "0 30px 80px rgba(59, 130, 246, 0.1)",
+        overlay: "rgba(15, 20, 25, 0.2)",
         background:
-          "radial-gradient(circle at top left, rgba(96, 165, 255, 0.2), transparent 35%), radial-gradient(circle at 90% 18%, rgba(255, 122, 92, 0.15), transparent 28%), linear-gradient(135deg, #f0f5ff 0%, #e5f0ff 45%, #dae8ff 100%)",
+          "radial-gradient(circle at top left, rgba(59, 130, 246, 0.08), transparent 35%), radial-gradient(circle at 90% 18%, rgba(249, 115, 22, 0.08), transparent 28%), linear-gradient(135deg, #f8faff 0%, #f0f7ff 45%, #e8f2ff 100%)",
         mesh:
-          "linear-gradient(120deg, rgba(96, 165, 255, 0.08), transparent 48%), linear-gradient(300deg, rgba(96, 165, 255, 0.1), transparent 40%)",
+          "linear-gradient(120deg, rgba(59, 130, 246, 0.06), transparent 48%), linear-gradient(300deg, rgba(59, 130, 246, 0.08), transparent 40%)",
       };
 
   const carouselProjects = useMemo(
@@ -660,9 +674,10 @@ function Portfolio() {
                       <span
                         style={{
                           ...styles.projectCategory,
-                          color: project.color,
-                          background: `${project.color}12`,
-                          border: `1px solid ${project.color}30`,
+                          color: isDark ? project.color : adjustColorForLight(project.color),
+                          background: isDark ? `${project.color}12` : `${project.color}30`,
+                          border: isDark ? `1px solid ${project.color}30` : `1.5px solid ${project.color}60`,
+                          fontWeight: isDark ? 500 : 700,
                         }}
                       >
                         {project.category}
@@ -841,9 +856,10 @@ function Portfolio() {
                   transition={{ delay: 0.15 }}
                   style={{
                     ...styles.projectCategory,
-                    color: selectedProject.color,
-                    background: `${selectedProject.color}12`,
-                    border: `1px solid ${selectedProject.color}30`,
+                    color: isDark ? selectedProject.color : adjustColorForLight(selectedProject.color),
+                    background: isDark ? `${selectedProject.color}12` : `${selectedProject.color}30`,
+                    border: isDark ? `1px solid ${selectedProject.color}30` : `1.5px solid ${selectedProject.color}60`,
+                    fontWeight: isDark ? 500 : 700,
                   }}
                 >
                   {selectedProject.category}
@@ -1061,13 +1077,34 @@ function Portfolio() {
                 whileHover={{ y: -4, boxShadow: palette.shadow }}
               >
                 <span style={{ ...styles.sectionLabel, color: palette.accent }}>
-                  <Phone size={14} style={{ display: "inline", verticalAlign: "middle", marginRight: "0.4rem" }} /> GET IN TOUCH
+                  <Phone size={14} style={{ display: "inline", verticalAlign: "middle", marginRight: "0.4rem" }} /> CP NUMBER
                 </span>
-                <p style={{ color: palette.text, fontSize: "1rem", display: "block", marginTop: "0.6rem", margin: "0.6rem 0 0 0", fontWeight: 400 }}>
-                  09558903235
+                <p style={{ ...styles.metaText, color: palette.text }}>
+                  +63 955-890-3235
                 </p>
-                <p style={{ color: palette.subText, fontSize: "0.8rem", margin: "0.4rem 0 0 0", fontWeight: 500 }}>
-                  Available for projects
+              </motion.div>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <motion.div
+                style={{
+                  ...styles.metaCard,
+                  background: palette.panel,
+                  border: `1.5px solid ${palette.border}`,
+                  backdropFilter: "blur(10px)",
+                }}
+                whileHover={{ y: -4, boxShadow: palette.shadow }}
+              >
+                <span style={{ ...styles.sectionLabel, color: palette.accent }}>
+                  <Mail size={14} style={{ display: "inline", verticalAlign: "middle", marginRight: "0.4rem" }} /> EMAIL
+                </span>
+                <p style={{ ...styles.metaText, color: palette.text }}>
+                  benkhairnajir2001@gmail.com
                 </p>
               </motion.div>
             </motion.div>
