@@ -2,12 +2,10 @@ import { NavLink } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import ThemeTransition from "./ThemeTransition";
-import { getTheme } from "../theme";
-import { Moon, Sun, Code, GitBranch, Briefcase } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 
 function Header({ theme, setTheme }) {
   const isDark = theme === "dark";
-  const colors = getTheme(isDark);
 
   const [animating, setAnimating] = useState(false);
   const [compact, setCompact] = useState(false);

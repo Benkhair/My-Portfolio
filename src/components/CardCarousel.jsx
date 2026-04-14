@@ -24,14 +24,14 @@ function CardCarousel({ projects = [], palette, isDark, onSelectProject }) {
   }, []);
 
   useEffect(() => {
-    if (isHovered || count < 2) return undefined;
+    if (isHovered || isMobile || count < 2) return undefined;
 
     const timer = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % count);
     }, 4800);
 
     return () => window.clearInterval(timer);
-  }, [count, isHovered]);
+  }, [count, isHovered, isMobile]);
 
   useEffect(() => {
     if (count < 2) return undefined;
@@ -49,10 +49,10 @@ function CardCarousel({ projects = [], palette, isDark, onSelectProject }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [count]);
 
-  const cardWidth = isMobile ? 255 : 340;
-  const cardHeight = isMobile ? 360 : 430;
-  const sideSpacing = isMobile ? 138 : 250;
-  const tilt = isMobile ? 28 : 42;
+  const cardWidth = isMobile ? 248 : 340;
+  const cardHeight = isMobile ? 342 : 430;
+  const sideSpacing = isMobile ? 96 : 250;
+  const tilt = isMobile ? 16 : 42;
 
   const normalizedCards = useMemo(() => {
     return projects.map((project, index) => {
@@ -172,14 +172,14 @@ function CardCarousel({ projects = [], palette, isDark, onSelectProject }) {
               initial={false}
               animate={{
                 x,
-                scale: isCenter ? 1.12 : 0.88,
+                scale: isCenter ? 1.08 : 0.84,
                 rotateY: isCenter ? 0 : offset < 0 ? tilt : -tilt,
-                opacity: isCenter ? 1 : 0.62,
-                filter: isCenter ? "brightness(1.06) saturate(1.05)" : "brightness(0.92) saturate(0.9)",
-                y: isCenter ? 0 : 22,
+                opacity: isCenter ? 1 : 0.5,
+                filter: isCenter ? "brightness(1.06) saturate(1.05)" : "brightness(0.9) saturate(0.88)",
+                y: isCenter ? 0 : 18,
               }}
               transition={{ type: "spring", stiffness: 220, damping: 24, mass: 0.8 }}
-              whileHover={{ scale: isCenter ? 1.13 : 0.92, y: isCenter ? -4 : 18 }}
+              whileHover={{ scale: isCenter ? 1.09 : 0.86, y: isCenter ? -4 : 16 }}
               whileTap={{ scale: 0.98 }}
               style={{
                 position: "absolute",
@@ -331,7 +331,7 @@ function CardCarousel({ projects = [], palette, isDark, onSelectProject }) {
           display: "flex",
           justifyContent: "center",
           gap: "0.6rem",
-          marginTop: isMobile ? "0.4rem" : "0.6rem",
+          marginTop: isMobile ? "0.35rem" : "0.6rem",
           marginBottom: "1rem",
           flexWrap: "wrap",
         }}
@@ -363,6 +363,8 @@ function CardCarousel({ projects = [], palette, isDark, onSelectProject }) {
           alignItems: "center",
           gap: "0.75rem",
           flexWrap: "wrap",
+          flexDirection: isMobile ? "column" : "row",
+          width: "100%",
         }}
       >
         <motion.button
@@ -375,8 +377,8 @@ function CardCarousel({ projects = [], palette, isDark, onSelectProject }) {
             background: palette.panelStrong,
             color: palette.text,
             borderRadius: "999px",
-            padding: "0.75rem 1rem",
-            minWidth: "7.4rem",
+            padding: isMobile ? "0.8rem 1rem" : "0.75rem 1rem",
+            minWidth: isMobile ? "100%" : "7.4rem",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
@@ -397,8 +399,8 @@ function CardCarousel({ projects = [], palette, isDark, onSelectProject }) {
             background: palette.panelStrong,
             color: palette.text,
             borderRadius: "999px",
-            padding: "0.75rem 1rem",
-            minWidth: "7.4rem",
+            padding: isMobile ? "0.8rem 1rem" : "0.75rem 1rem",
+            minWidth: isMobile ? "100%" : "7.4rem",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",

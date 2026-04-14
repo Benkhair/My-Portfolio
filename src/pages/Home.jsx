@@ -3,16 +3,25 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
-import { getTheme } from "../theme";
 import ThemeTransition from "../components/ThemeTransition";
 
 function Home() {
   const navigate = useNavigate();
   const { theme, setTheme } = useOutletContext();
   const isDark = theme === "dark";
+  const [isMobile, setIsMobile] = useState(false);
 
   const [text, setText] = useState("");
   const [animating, setAnimating] = useState(false);
+
+  useEffect(() => {
+    const updateViewport = () => setIsMobile(window.innerWidth < 768);
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
 
   const handleToggle = () => {
     setAnimating(true);
@@ -67,10 +76,6 @@ function Home() {
         mesh:
           "linear-gradient(120deg, rgba(59, 130, 246, 0.06), transparent 48%), linear-gradient(300deg, rgba(59, 130, 246, 0.08), transparent 40%)",
       };
-
-
-  const colors = getTheme(isDark);
-
   return (
     <>
       <ThemeTransition show={animating} isDark={isDark} />
@@ -142,8 +147,9 @@ function Home() {
             ...styles.blurOrb,
             ...styles.blurOrbLeft,
             background: palette.accentSoft,
+            display: isMobile ? "none" : "block",
           }}
-          animate={{ y: [0, 30, 0], x: [0, 15, 0] }}
+          animate={isMobile ? undefined : { y: [0, 30, 0], x: [0, 15, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
@@ -151,8 +157,9 @@ function Home() {
             ...styles.blurOrb,
             ...styles.blurOrbRight,
             background: palette.warm,
+            display: isMobile ? "none" : "block",
           }}
-          animate={{ y: [0, -40, 0], x: [0, -20, 0] }}
+          animate={isMobile ? undefined : { y: [0, -40, 0], x: [0, -20, 0] }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
@@ -167,8 +174,9 @@ function Home() {
             background: palette.accent,
             top: "50%",
             right: "10%",
+            display: isMobile ? "none" : "block",
           }}
-          animate={{ y: [0, -50, 0], x: [0, 25, 0] }}
+          animate={isMobile ? undefined : { y: [0, -50, 0], x: [0, 25, 0] }}
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
         />
 
@@ -226,7 +234,7 @@ function Home() {
                 color: isDark ? "#0f1a2e" : "#f0f5ff",
                 boxShadow: `0 15px 40px ${isDark ? 'rgba(96, 165, 255, 0.3)' : 'rgba(96, 165, 255, 0.2)'}`,
               }}
-              whileHover={{ y: -4, boxShadow: `0 20px 50px ${isDark ? 'rgba(96, 165, 255, 0.4)' : 'rgba(96, 165, 255, 0.3)'}` }}
+              whileHover={isMobile ? undefined : { y: -4, boxShadow: `0 20px 50px ${isDark ? 'rgba(96, 165, 255, 0.4)' : 'rgba(96, 165, 255, 0.3)'}` }}
               whileTap={{ scale: 0.96 }}
               onClick={() => navigate("/portfolio")}
             >
@@ -241,7 +249,7 @@ function Home() {
                 border: `2px solid ${palette.accent}`,
                 background: "transparent",
               }}
-              whileHover={{ 
+              whileHover={isMobile ? undefined : { 
                 background: palette.panel,
                 boxShadow: `0 0 20px ${isDark ? 'rgba(96, 165, 255, 0.2)' : 'rgba(96, 165, 255, 0.15)'}`,
               }}
@@ -267,7 +275,7 @@ function Home() {
               boxShadow: palette.shadow,
               position: "relative",
             }}
-            whileHover={{
+            whileHover={isMobile ? undefined : {
               boxShadow: `0 30px 80px ${isDark ? 'rgba(96, 165, 255, 0.3)' : 'rgba(96, 165, 255, 0.2)'}`,
             }}
           >
@@ -276,9 +284,9 @@ function Home() {
                 ...styles.photoFrame,
                 background: `linear-gradient(145deg, ${palette.accentSoft}, ${palette.warm})`,
               }}
-              animate={{ rotate: [-1, 1, -1] }}
+              animate={isMobile ? undefined : { rotate: [-1, 1, -1] }}
               transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-              whileHover={{ scale: 1.02 }}
+              whileHover={isMobile ? undefined : { scale: 1.02 }}
             >
               <img src={profile} alt="Benkhair Najir" style={styles.image} />
             </motion.div>

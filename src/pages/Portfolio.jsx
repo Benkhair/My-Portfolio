@@ -224,11 +224,7 @@ function Portfolio() {
   const { theme } = useOutletContext();
   const isDark = theme === "dark";
   const [selectedProject, setSelectedProject] = useState(null);
-  const [activeIndex, setActiveIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-  const sliderRef = useRef(null);
-  const cardRefs = useRef([]);
-  const currentIndexRef = useRef(0);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -297,122 +293,6 @@ function Portfolio() {
 
   const projectCount = carouselProjects.length;
   const techCount = new Set(projects.flatMap((project) => project.tech)).size;
-  const cardWidth = isMobile ? 270 : 300;
-  const cardPadding = isMobile ? "calc(50% - 144px)" : "calc(50% - 160px)";
-
-  const clampIndex = (index) => Math.max(0, Math.min(projectCount - 1, index));
-  const draggingRef = useRef(false);
-  const pointerStartXRef = useRef(0);
-  const scrollStartRef = useRef(0);
-
-  const syncActiveCard = () => {
-    if (!sliderRef.current || cardRefs.current.length === 0) return;
-
-    const sliderRect = sliderRef.current.getBoundingClientRect();
-    const sliderCenter = sliderRect.left + sliderRect.width / 2;
-
-    let closestIndex = 0;
-    let closestDistance = Number.POSITIVE_INFINITY;
-
-    cardRefs.current.forEach((card, index) => {
-      if (!card) return;
-
-      const rect = card.getBoundingClientRect();
-      const cardCenter = rect.left + rect.width / 2;
-      const distance = Math.abs(cardCenter - sliderCenter);
-
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestIndex = index;
-      }
-    });
-
-    currentIndexRef.current = closestIndex;
-    setActiveIndex(closestIndex);
-  };
-
-  const scrollToCard = (index) => {
-    const nextIndex = clampIndex(index);
-    cardRefs.current[nextIndex]?.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center",
-    });
-  };
-
-  const openProject = (index) => {
-    const nextIndex = clampIndex(index);
-    currentIndexRef.current = nextIndex;
-    setActiveIndex(nextIndex);
-    scrollToCard(nextIndex);
-    setSelectedProject(carouselProjects[nextIndex] ?? null);
-  };
-
-  const rotatePrev = () => {
-    const currentIndex = (currentIndexRef.current - 1 + projectCount) % projectCount;
-    currentIndexRef.current = currentIndex;
-    setActiveIndex(currentIndex);
-    scrollToCard(currentIndex);
-  };
-  const rotateNext = () => {
-    const currentIndex = (currentIndexRef.current + 1) % projectCount;
-    currentIndexRef.current = currentIndex;
-    setActiveIndex(currentIndex);
-    scrollToCard(currentIndex);
-  };
-
-  useEffect(() => {
-    if (!sliderRef.current) return undefined;
-
-    let rafId = null;
-
-    const handleSync = () => {
-      if (rafId !== null) cancelAnimationFrame(rafId);
-
-      rafId = requestAnimationFrame(() => {
-        syncActiveCard();
-      });
-    };
-
-    handleSync();
-    sliderRef.current.addEventListener("scroll", handleSync, { passive: true });
-    window.addEventListener("resize", handleSync);
-
-    return () => {
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      sliderRef.current?.removeEventListener("scroll", handleSync);
-      window.removeEventListener("resize", handleSync);
-    };
-  }, [carouselProjects.length]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      currentIndexRef.current = 0;
-      setActiveIndex(0);
-      scrollToCard(0);
-    }, 120);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handlePointerDown = (event) => {
-    draggingRef.current = true;
-    pointerStartXRef.current = event.clientX;
-    scrollStartRef.current = sliderRef.current?.scrollLeft ?? 0;
-    if (sliderRef.current) sliderRef.current.style.cursor = "grabbing";
-  };
-
-  const handlePointerMove = (event) => {
-    if (!draggingRef.current || !sliderRef.current) return;
-
-    const delta = event.clientX - pointerStartXRef.current;
-    sliderRef.current.scrollLeft = scrollStartRef.current - delta;
-  };
-
-  const handlePointerUp = () => {
-    draggingRef.current = false;
-    if (sliderRef.current) sliderRef.current.style.cursor = "grab";
-  };
 
   return (
     <motion.main
@@ -431,8 +311,9 @@ function Portfolio() {
           ...styles.blurOrb,
           ...styles.blurOrbLeft,
           background: palette.accentSoft,
+          display: isMobile ? "none" : "block",
         }}
-        animate={{ y: [0, 30, 0], x: [0, 15, 0] }}
+        animate={isMobile ? undefined : { y: [0, 30, 0], x: [0, 15, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
@@ -440,8 +321,9 @@ function Portfolio() {
           ...styles.blurOrb,
           ...styles.blurOrbRight,
           background: palette.warm,
+          display: isMobile ? "none" : "block",
         }}
-        animate={{ y: [0, -40, 0], x: [0, -20, 0] }}
+        animate={isMobile ? undefined : { y: [0, -40, 0], x: [0, -20, 0] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
@@ -456,8 +338,9 @@ function Portfolio() {
           background: palette.accent,
           top: "50%",
           right: "10%",
+          display: isMobile ? "none" : "block",
         }}
-        animate={{ y: [0, -50, 0], x: [0, 25, 0] }}
+        animate={isMobile ? undefined : { y: [0, -50, 0], x: [0, 25, 0] }}
         transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
       />
 
@@ -524,8 +407,8 @@ function Portfolio() {
                   border: `1px solid ${palette.border}`,
                   background: palette.panel,
                 }}
-                animate={{ opacity: [0.7, 1, 0.7] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                animate={isMobile ? { opacity: 1 } : { opacity: [0.7, 1, 0.7] }}
+                transition={isMobile ? { duration: 0 } : { duration: 3, repeat: Infinity, ease: "easeInOut" }}
               >
                 {projectCount} projects ready to spin
               </motion.div>
@@ -774,21 +657,47 @@ function Portfolio() {
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
         >
-          <div style={{ marginBottom: "3rem", position: "relative" }}>
+          <div
+            style={{
+              marginBottom: isMobile ? "2rem" : "3rem",
+              position: "relative",
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: "stretch",
+              gap: isMobile ? "1rem" : "1.5rem",
+            }}
+          >
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              style={{ flex: 1 }}
+              style={{
+                flex: 1,
+                paddingRight: isMobile ? 0 : "18rem",
+              }}
             >
               <p style={{ ...styles.sectionLabel, color: palette.subText }}>
                 About me
               </p>
-              <h2 style={styles.aboutTitle}>
+              <h2
+                style={{
+                  ...styles.aboutTitle,
+                  fontSize: isMobile ? "1.6rem" : styles.aboutTitle.fontSize,
+                  maxWidth: isMobile ? "100%" : styles.aboutTitle.maxWidth,
+                }}
+              >
                 Building practical systems with a clean product mindset
               </h2>
-              <p style={{ ...styles.aboutCopy, color: palette.subText, marginTop: "1rem" }}>
+              <p
+                style={{
+                  ...styles.aboutCopy,
+                  color: palette.subText,
+                  marginTop: isMobile ? "0.75rem" : "1rem",
+                  fontSize: isMobile ? "0.95rem" : styles.aboutCopy.fontSize,
+                  lineHeight: isMobile ? 1.75 : styles.aboutCopy.lineHeight,
+                }}
+              >
                 I am a Computer Engineering student focused on building
                 real-world systems using Arduino, IoT, and modern web
                 development. I enjoy blending hardware and software into useful
@@ -797,12 +706,13 @@ function Portfolio() {
             </motion.div>
 
             <motion.div
+              layout={!isMobile}
               style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                width: "280px",
-                height: "280px",
+                position: isMobile ? "relative" : "absolute",
+                top: isMobile ? "auto" : 0,
+                right: isMobile ? "auto" : 0,
+                width: isMobile ? "100%" : "280px",
+                height: isMobile ? "220px" : "280px",
                 borderRadius: "20px",
                 background: `linear-gradient(135deg, ${palette.accent}20, ${palette.warm}15)`,
                 border: `2px solid ${palette.accent}40`,
@@ -812,12 +722,13 @@ function Portfolio() {
                 alignItems: "center",
                 justifyContent: "center",
                 overflow: "hidden",
+                marginTop: isMobile ? "0.25rem" : 0,
               }}
-              initial={{ opacity: 0, scale: 0.8, x: 50 }}
-              whileInView={{ opacity: 1, scale: 1, x: 0 }}
+              initial={isMobile ? { opacity: 0, y: 16, scale: 0.96 } : { opacity: 0, scale: 0.8, x: 50 }}
+              whileInView={isMobile ? { opacity: 1, y: 0, scale: 1 } : { opacity: 1, scale: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              whileHover={{ boxShadow: `0 0 30px ${palette.accent}30` }}
+              whileHover={isMobile ? undefined : { boxShadow: `0 0 30px ${palette.accent}30` }}
             >
               <motion.div
                 style={{
@@ -837,15 +748,16 @@ function Portfolio() {
                   position: "relative",
                   zIndex: 10,
                   textAlign: "center",
+                  padding: isMobile ? "0 1rem" : 0,
                 }}
                 animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
               >
-                <span style={{ display: "flex", justifyContent: "center", marginBottom: "0.8rem", color: palette.accent }}><Lightbulb size={44} strokeWidth={1.5} /></span>
-                <p style={{ color: palette.text, fontSize: "0.95rem", fontWeight: 700, margin: 0, marginBottom: "0.5rem" }}>
+                <span style={{ display: "flex", justifyContent: "center", marginBottom: "0.8rem", color: palette.accent }}><Lightbulb size={isMobile ? 36 : 44} strokeWidth={1.5} /></span>
+                <p style={{ color: palette.text, fontSize: isMobile ? "0.9rem" : "0.95rem", fontWeight: 700, margin: 0, marginBottom: "0.5rem" }}>
                   Problem Solver
                 </p>
-                <p style={{ color: palette.subText, fontSize: "0.8rem", margin: 0, lineHeight: 1.4 }}>
+                <p style={{ color: palette.subText, fontSize: isMobile ? "0.76rem" : "0.8rem", margin: 0, lineHeight: 1.4 }}>
                   Creating innovative solutions through code & hardware
                 </p>
               </motion.div>
@@ -1087,26 +999,26 @@ function Portfolio() {
               return (
                 <motion.div
                   key={category.category}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: catIndex * 0.15, type: "spring", stiffness: 200, damping: 20 }}
+                  initial={isMobile ? false : { opacity: 0, y: 20 }}
+                  whileInView={isMobile ? undefined : { opacity: 1, y: 0 }}
+                  transition={isMobile ? undefined : { delay: catIndex * 0.15, type: "spring", stiffness: 200, damping: 20 }}
                   viewport={{ once: true }}
                   style={{
                     marginBottom: "2rem",
-                    padding: "1.8rem",
+                    padding: isMobile ? "1.15rem" : "1.8rem",
                     borderRadius: "24px",
                     background: palette.panel,
                     border: `1.5px solid ${palette.border}`,
-                    backdropFilter: "blur(10px)",
+                    backdropFilter: isMobile ? "none" : "blur(10px)",
                     transition: "box-shadow 0.3s ease",
                   }}
-                  whileHover={{ boxShadow: `0 8px 40px ${catColors.glow}`, borderColor: `${catColors.bg}40` }}
+                  whileHover={isMobile ? undefined : { boxShadow: `0 8px 40px ${catColors.glow}`, borderColor: `${catColors.bg}40` }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.8rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: isMobile ? "1.1rem" : "1.8rem" }}>
                     <motion.div
                       style={{
-                        width: "56px",
-                        height: "56px",
+                        width: isMobile ? "48px" : "56px",
+                        height: isMobile ? "48px" : "56px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -1115,36 +1027,36 @@ function Portfolio() {
                         border: `1.5px solid ${catColors.bg}50`,
                         color: catColors.bg,
                       }}
-                      whileHover={{ scale: 1.1, rotate: 8 }}
-                      transition={{ type: "spring", stiffness: 300 }}
+                      whileHover={isMobile ? undefined : { scale: 1.1, rotate: 8 }}
+                      transition={isMobile ? undefined : { type: "spring", stiffness: 300 }}
                     >
-                      <category.icon size={26} strokeWidth={1.5} />
+                      <category.icon size={isMobile ? 22 : 26} strokeWidth={1.5} />
                     </motion.div>
                     <div style={{ flex: 1 }}>
-                      <h3 style={{ color: palette.text, fontWeight: 700, fontSize: "1.15rem", margin: 0 }}>
+                      <h3 style={{ color: palette.text, fontWeight: 700, fontSize: isMobile ? "1.02rem" : "1.15rem", margin: 0 }}>
                         {category.category}
                       </h3>
-                      <p style={{ color: palette.subText, fontSize: "0.85rem", margin: "0.25rem 0 0 0" }}>
+                      <p style={{ color: palette.subText, fontSize: isMobile ? "0.8rem" : "0.85rem", margin: "0.25rem 0 0 0" }}>
                         {category.skills.length} Skills
                       </p>
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem 2rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "1rem" : "1.5rem 2rem" }}>
                     {category.skills.map((skill, skillIndex) => (
                       <motion.div
                         key={skill.name}
-                        initial={{ opacity: 0, x: -15 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ delay: catIndex * 0.1 + skillIndex * 0.06 }}
+                        initial={isMobile ? false : { opacity: 0, x: -15 }}
+                        whileInView={isMobile ? undefined : { opacity: 1, x: 0 }}
+                        transition={isMobile ? undefined : { delay: catIndex * 0.1 + skillIndex * 0.06 }}
                         viewport={{ once: true }}
                       >
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.6rem" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
                             <div
                               style={{
-                                width: "24px",
-                                height: "24px",
+                                width: isMobile ? "22px" : "24px",
+                                height: isMobile ? "22px" : "24px",
                                 borderRadius: "6px",
                                 background: `${skill.color}15`,
                                 border: `1px solid ${skill.color}40`,
@@ -1156,7 +1068,7 @@ function Portfolio() {
                             >
                               {skill.logo}
                             </div>
-                            <span style={{ color: palette.text, fontWeight: 600, fontSize: "0.9rem" }}>
+                            <span style={{ color: palette.text, fontWeight: 600, fontSize: isMobile ? "0.84rem" : "0.9rem" }}>
                               {skill.name}
                             </span>
                           </div>
@@ -1164,7 +1076,7 @@ function Portfolio() {
                             style={{
                               color: catColors.bg,
                               fontWeight: 700,
-                              fontSize: "0.8rem",
+                              fontSize: isMobile ? "0.76rem" : "0.8rem",
                             }}
                           >
                             {skill.level}%
@@ -1173,22 +1085,22 @@ function Portfolio() {
                         <div
                           style={{
                             width: "100%",
-                            height: "8px",
+                            height: isMobile ? "6px" : "8px",
                             borderRadius: "999px",
                             background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
                             overflow: "hidden",
                           }}
                         >
                           <motion.div
-                            initial={{ width: 0 }}
-                            whileInView={{ width: `${skill.level}%` }}
-                            transition={{ delay: catIndex * 0.1 + skillIndex * 0.06 + 0.3, duration: 1, ease: [0.25, 0.8, 0.25, 1] }}
+                            initial={isMobile ? false : { width: 0 }}
+                            whileInView={isMobile ? undefined : { width: `${skill.level}%` }}
+                            transition={isMobile ? undefined : { delay: catIndex * 0.1 + skillIndex * 0.06 + 0.3, duration: 1, ease: [0.25, 0.8, 0.25, 1] }}
                             viewport={{ once: true }}
                             style={{
                               height: "100%",
                               background: `linear-gradient(90deg, ${catColors.bg}, ${catColors.accent})`,
                               borderRadius: "999px",
-                              boxShadow: `0 0 8px ${catColors.glow}`,
+                              boxShadow: isMobile ? "none" : `0 0 8px ${catColors.glow}`,
                             }}
                           />
                         </div>
