@@ -8,6 +8,7 @@ import {
   MapPin, Phone, Cake, Gamepad2, Palette,
   ArrowLeft, ExternalLink, Code, ChevronLeft, ChevronRight, Mail,
 } from "lucide-react";
+import CardCarousel from "../components/CardCarousel";
 
 const projects = [
   {
@@ -348,13 +349,13 @@ function Portfolio() {
   };
 
   const rotatePrev = () => {
-    const currentIndex = Math.max(0, currentIndexRef.current - 1);
+    const currentIndex = (currentIndexRef.current - 1 + projectCount) % projectCount;
     currentIndexRef.current = currentIndex;
     setActiveIndex(currentIndex);
     scrollToCard(currentIndex);
   };
   const rotateNext = () => {
-    const currentIndex = Math.min(projectCount - 1, currentIndexRef.current + 1);
+    const currentIndex = (currentIndexRef.current + 1) % projectCount;
     currentIndexRef.current = currentIndex;
     setActiveIndex(currentIndex);
     scrollToCard(currentIndex);
@@ -383,6 +384,16 @@ function Portfolio() {
       window.removeEventListener("resize", handleSync);
     };
   }, [carouselProjects.length]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      currentIndexRef.current = 0;
+      setActiveIndex(0);
+      scrollToCard(0);
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handlePointerDown = (event) => {
     draggingRef.current = true;
@@ -552,207 +563,12 @@ function Portfolio() {
           </div>
         </motion.section>
 
-        <motion.section
-          style={{
-            ...styles.sliderSection,
-            background: palette.panel,
-            border: `1px solid ${palette.border}`,
-            boxShadow: palette.shadow,
-          }}
-          initial={{ y: 24, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.15, duration: 0.75 }}
-        >
-          <div style={styles.carouselHeaderCentered}>
-            <p
-              style={{
-                ...styles.sectionLabel,
-                color: palette.accent,
-                textAlign: "center",
-                fontSize: "1.05rem",
-                fontWeight: 700,
-                letterSpacing: "0.18em",
-              }}
-            >
-              PROJECT SHOWCASE
-            </p>
-            <p
-              style={{
-                ...styles.carouselSubtitle,
-                color: palette.subText,
-                textAlign: "center",
-                marginTop: "0.55rem",
-              }}
-            >
-              These are selected projects from my portfolio.
-            </p>
-          </div>
-
-          <div
-            ref={sliderRef}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-            style={{
-              ...styles.sliderTrack,
-              paddingLeft: cardPadding,
-              paddingRight: cardPadding,
-              scrollPaddingInline: cardPadding,
-              paddingTop: "1rem",
-              cursor: "grab",
-              overflowX: "auto",
-              scrollSnapType: "x mandatory",
-            }}
-          >
-            {carouselProjects.map((project, index) => {
-              const distance = Math.abs(activeIndex - index);
-              const isActive = distance === 0;
-              const isNearby = distance === 1;
-              const scale = isActive ? 1.08 : isNearby ? 0.9 : 0.8;
-              const opacity = isActive ? 1 : isNearby ? 0.8 : 0.65;
-              const lift = isActive ? 0 : isNearby ? 8 : 18;
-              const saturation = isActive ? 1.08 : 0.96;
-              const shadow = index === activeIndex
-                ? `0 28px 78px ${project.color}30`
-                : `0 12px 28px rgba(0, 0, 0, 0.16)`;
-
-              return (
-                <motion.button
-                  key={project.title}
-                  type="button"
-                  data-index={index}
-                  ref={(node) => { cardRefs.current[index] = node; }}
-                  onClick={() => openProject(index)}
-                  whileHover={{ y: isActive ? 0 : lift - 6, scale: Math.min(scale + 0.04, 1.1) }}
-                  whileTap={{ scale: 0.98 }}
-                  layout
-                  initial={false}
-                  animate={{
-                    scale,
-                    y: lift,
-                    opacity,
-                    filter: `brightness(${isActive ? 1.05 : 0.95}) saturate(${saturation})`,
-                    boxShadow: shadow,
-                  }}
-                  transition={{
-                    layout: { type: "spring", stiffness: 260, damping: 24 },
-                    type: "spring",
-                    stiffness: 260,
-                    damping: 24,
-                  }}
-                  style={{
-                    ...styles.sliderCard,
-                    width: `${cardWidth}px`,
-                    minHeight: isMobile ? "23.5rem" : "24.5rem",
-                    borderColor: index === activeIndex ? project.color : palette.border,
-                    scrollSnapAlign: "center",
-                    background: palette.panelStrong,
-                    color: palette.text,
-                    transformOrigin: "center center",
-                  }}
-                  aria-label={`Open ${project.title}`}
-                >
-                  <div style={{ ...styles.sliderCardIconWrap, background: `linear-gradient(135deg, ${project.color}22, ${project.color}08)` }}>
-                    <motion.div
-                      style={{
-                        ...styles.sliderCardIcon,
-                        color: project.color,
-                        borderColor: `${project.color}33`,
-                        background: `${project.color}12`,
-                      }}
-                      animate={{ y: [0, -4, 0] }}
-                      transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <project.icon size={48} strokeWidth={1.6} />
-                    </motion.div>
-                    <span style={styles.sliderCardIndex}>{String(index + 1).padStart(2, "0")}</span>
-                  </div>
-
-                  <div style={styles.sliderCardBody}>
-                    <div style={styles.carouselCardTopRow}>
-                      <span
-                        style={{
-                          ...styles.projectCategory,
-                          color: isDark ? project.color : adjustColorForLight(project.color),
-                          background: isDark ? `${project.color}12` : `${project.color}30`,
-                          border: isDark ? `1px solid ${project.color}30` : `1.5px solid ${project.color}60`,
-                          fontWeight: isDark ? 500 : 700,
-                        }}
-                      >
-                        {project.category}
-                      </span>
-                    </div>
-
-                    <div style={{ flex: 1 }}>
-                      <h3 style={styles.projectTitle}>{project.title}</h3>
-                      <p style={{ ...styles.projectDescription, color: palette.subText }}>
-                        {project.description}
-                      </p>
-                    </div>
-
-                    <div style={styles.techRow}>
-                      <div style={styles.techChipsRow}>
-                        {project.tech.map((item) => (
-                          <span
-                            key={item}
-                            style={{
-                              ...styles.techChip,
-                              color: palette.accent,
-                              background: palette.chipBg,
-                              border: `1px solid ${palette.border}`,
-                            }}
-                          >
-                            {item}
-                          </span>
-                        ))}
-                      </div>
-                      <span style={{ ...styles.viewLink, color: palette.subText }}>
-                        Click to view <Code size={14} />
-                      </span>
-                    </div>
-                  </div>
-                </motion.button>
-              );
-            })}
-          </div>
-
-          <div style={styles.sliderFooterControls}>
-            <motion.button
-              type="button"
-              onClick={rotatePrev}
-              whileHover={{ y: -2, scale: 1.05 }}
-              whileTap={{ scale: 0.96 }}
-              animate={{ x: 0 }}
-              transition={{ type: "spring", stiffness: 280, damping: 22 }}
-              style={{
-                ...styles.carouselControlPill,
-                color: palette.text,
-                background: palette.panelStrong,
-                border: `1px solid ${palette.border}`,
-              }}
-            >
-              <ChevronLeft size={16} /> Prev
-            </motion.button>
-
-            <motion.button
-              type="button"
-              onClick={rotateNext}
-              whileHover={{ y: -2, scale: 1.05 }}
-              whileTap={{ scale: 0.96 }}
-              animate={{ x: 0 }}
-              transition={{ type: "spring", stiffness: 280, damping: 22 }}
-              style={{
-                ...styles.carouselControlPill,
-                color: palette.text,
-                background: palette.panelStrong,
-                border: `1px solid ${palette.border}`,
-              }}
-            >
-              Next <ChevronRight size={16} />
-            </motion.button>
-          </div>
-        </motion.section>
+        <CardCarousel
+          projects={carouselProjects}
+          palette={palette}
+          isDark={isDark}
+          onSelectProject={setSelectedProject}
+        />
 
         <AnimatePresence>
           {selectedProject ? (
