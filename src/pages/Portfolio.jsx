@@ -1,13 +1,12 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { getTheme } from "../theme";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   BookOpen, ScanEye, CloudRain, Trash2, Fish,
   Globe, Cog, Smartphone,
   Lightbulb, Zap, Sparkles,
   MapPin, Phone, Cake, Gamepad2, Palette,
-  ArrowLeft, Search, ExternalLink, Code, X, ChevronRight,
+  ArrowLeft, ExternalLink, Code, ChevronLeft, ChevronRight,
 } from "lucide-react";
 
 const projects = [
@@ -209,18 +208,27 @@ function Portfolio() {
   const navigate = useNavigate();
   const { theme } = useOutletContext();
   const isDark = theme === "dark";
-  const colors = getTheme(isDark);
-
-  const [selected, setSelected] = useState(null);
-  const [filter, setFilter] = useState("All");
-  const [search, setSearch] = useState("");
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const sliderRef = useRef(null);
+  const cardRefs = useRef([]);
+  const currentIndexRef = useRef(0);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  const palette = isDark
-    ? {
+  useEffect(() => {
+    const updateViewport = () => setIsMobile(window.innerWidth < 768);
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  const palette = isDark? {
         text: "#e8f0ff",
         subText: "#a8b8d8",
         panel: "rgba(20, 32, 55, 0.65)",
@@ -255,18 +263,131 @@ function Portfolio() {
           "linear-gradient(120deg, rgba(96, 165, 255, 0.08), transparent 48%), linear-gradient(300deg, rgba(96, 165, 255, 0.1), transparent 40%)",
       };
 
-  const allTech = ["All", ...new Set(projects.flatMap((project) => project.tech))];
+  const carouselProjects = useMemo(
+    () =>
+      projects.map((project, index) => ({
+        ...project,
+        image:
+          project.image ??
+          [
+            "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1581579186993-5dd1e9f5b1f4?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80",
+          ][index % 5],
+      })),
+    [],
+  );
 
-  const filtered = projects.filter((project) => {
-    const matchesFilter = filter === "All" || project.tech.includes(filter);
-    const query = search.trim().toLowerCase();
-    const matchesSearch =
-      project.title.toLowerCase().includes(query) ||
-      project.description.toLowerCase().includes(query) ||
-      project.category.toLowerCase().includes(query);
+  const projectCount = carouselProjects.length;
+  const techCount = new Set(projects.flatMap((project) => project.tech)).size;
+  const cardWidth = isMobile ? 270 : 300;
+  const cardPadding = isMobile ? "calc(50% - 144px)" : "calc(50% - 160px)";
 
-    return matchesFilter && matchesSearch;
-  });
+  const clampIndex = (index) => Math.max(0, Math.min(projectCount - 1, index));
+  const draggingRef = useRef(false);
+  const pointerStartXRef = useRef(0);
+  const scrollStartRef = useRef(0);
+
+  const syncActiveCard = () => {
+    if (!sliderRef.current || cardRefs.current.length === 0) return;
+
+    const sliderRect = sliderRef.current.getBoundingClientRect();
+    const sliderCenter = sliderRect.left + sliderRect.width / 2;
+
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+
+    cardRefs.current.forEach((card, index) => {
+      if (!card) return;
+
+      const rect = card.getBoundingClientRect();
+      const cardCenter = rect.left + rect.width / 2;
+      const distance = Math.abs(cardCenter - sliderCenter);
+
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = index;
+      }
+    });
+
+    currentIndexRef.current = closestIndex;
+    setActiveIndex(closestIndex);
+  };
+
+  const scrollToCard = (index) => {
+    const nextIndex = clampIndex(index);
+    cardRefs.current[nextIndex]?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  };
+
+  const openProject = (index) => {
+    const nextIndex = clampIndex(index);
+    currentIndexRef.current = nextIndex;
+    setActiveIndex(nextIndex);
+    scrollToCard(nextIndex);
+    setSelectedProject(carouselProjects[nextIndex] ?? null);
+  };
+
+  const rotatePrev = () => {
+    const currentIndex = Math.max(0, currentIndexRef.current - 1);
+    currentIndexRef.current = currentIndex;
+    setActiveIndex(currentIndex);
+    scrollToCard(currentIndex);
+  };
+  const rotateNext = () => {
+    const currentIndex = Math.min(projectCount - 1, currentIndexRef.current + 1);
+    currentIndexRef.current = currentIndex;
+    setActiveIndex(currentIndex);
+    scrollToCard(currentIndex);
+  };
+
+  useEffect(() => {
+    if (!sliderRef.current) return undefined;
+
+    let rafId = null;
+
+    const handleSync = () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+
+      rafId = requestAnimationFrame(() => {
+        syncActiveCard();
+      });
+    };
+
+    handleSync();
+    sliderRef.current.addEventListener("scroll", handleSync, { passive: true });
+    window.addEventListener("resize", handleSync);
+
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      sliderRef.current?.removeEventListener("scroll", handleSync);
+      window.removeEventListener("resize", handleSync);
+    };
+  }, [carouselProjects.length]);
+
+  const handlePointerDown = (event) => {
+    draggingRef.current = true;
+    pointerStartXRef.current = event.clientX;
+    scrollStartRef.current = sliderRef.current?.scrollLeft ?? 0;
+    if (sliderRef.current) sliderRef.current.style.cursor = "grabbing";
+  };
+
+  const handlePointerMove = (event) => {
+    if (!draggingRef.current || !sliderRef.current) return;
+
+    const delta = event.clientX - pointerStartXRef.current;
+    sliderRef.current.scrollLeft = scrollStartRef.current - delta;
+  };
+
+  const handlePointerUp = () => {
+    draggingRef.current = false;
+    if (sliderRef.current) sliderRef.current.style.cursor = "grab";
+  };
 
   return (
     <motion.main
@@ -381,15 +502,15 @@ function Portfolio() {
                 animate={{ opacity: [0.7, 1, 0.7] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               >
-                {filtered.length} projects in view
+                {projectCount} projects ready to spin
               </motion.div>
             </motion.div>
           </div>
 
           <div style={styles.heroStats}>
             {[
-              { value: `${projects.length}`, label: "Projects" },
-              { value: `${allTech.length - 1}`, label: "Tech Areas" },
+              { value: `${projectCount}`, label: "Projects" },
+              { value: `${techCount}`, label: "Tech Areas" },
               { value: "IoT", label: "Core Focus" },
             ].map((item, i) => (
               <motion.div
@@ -418,174 +539,124 @@ function Portfolio() {
         </motion.section>
 
         <motion.section
-          style={styles.contentGrid}
+          style={{
+            ...styles.sliderSection,
+            background: palette.panel,
+            border: `1px solid ${palette.border}`,
+            boxShadow: palette.shadow,
+          }}
           initial={{ y: 24, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.75 }}
         >
-          <motion.aside
+          <div style={styles.carouselHeaderCentered}>
+            <p
+              style={{
+                ...styles.sectionLabel,
+                color: palette.accent,
+                textAlign: "center",
+                fontSize: "1.05rem",
+                fontWeight: 700,
+                letterSpacing: "0.18em",
+              }}
+            >
+              PROJECT SHOWCASE
+            </p>
+            <p
+              style={{
+                ...styles.carouselSubtitle,
+                color: palette.subText,
+                textAlign: "center",
+                marginTop: "0.55rem",
+              }}
+            >
+              These are selected projects from my portfolio.
+            </p>
+          </div>
+
+          <div
+            ref={sliderRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
             style={{
-              ...styles.sidebar,
-              background: palette.panel,
-              border: `1px solid ${palette.border}`,
-              boxShadow: palette.shadow,
+              ...styles.sliderTrack,
+              paddingLeft: cardPadding,
+              paddingRight: cardPadding,
+              scrollPaddingInline: cardPadding,
+              paddingTop: "1rem",
+              cursor: "grab",
+              overflowX: "auto",
+              scrollSnapType: "x mandatory",
             }}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
           >
-            <div>
-              <p style={{ ...styles.sectionLabel, color: palette.subText }}>
-                Refine collection
-              </p>
-              <h2 style={styles.sidebarTitle}>Filter the work by stack or idea</h2>
-            </div>
+            {carouselProjects.map((project, index) => {
+              const distance = Math.abs(activeIndex - index);
+              const isActive = distance === 0;
+              const isNearby = distance === 1;
+              const scale = isActive ? 1.08 : isNearby ? 0.9 : 0.8;
+              const opacity = isActive ? 1 : isNearby ? 0.8 : 0.65;
+              const lift = isActive ? 0 : isNearby ? 8 : 18;
+              const saturation = isActive ? 1.08 : 0.96;
+              const shadow = index === activeIndex
+                ? `0 28px 78px ${project.color}30`
+                : `0 12px 28px rgba(0, 0, 0, 0.16)`;
 
-            <label style={styles.searchWrap}>
-              <span style={{ ...styles.searchLabel, color: palette.subText, display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <Search size={14} /> Search
-              </span>
-              <div style={{ position: "relative" }}>
-                <input
-                  placeholder="Search projects..."
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  style={{
-                    ...styles.searchInput,
-                    color: palette.text,
-                    background: palette.panelStrong,
-                    border: `1px solid ${palette.border}`,
-                    paddingRight: search ? "2.4rem" : "1rem",
-                  }}
-                />
-                {search && (
-                  <motion.button
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    onClick={() => setSearch("")}
-                    style={{
-                      position: "absolute",
-                      right: "0.7rem",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      color: palette.subText,
-                      padding: "0.2rem",
-                      display: "flex",
-                    }}
-                  >
-                    <X size={14} />
-                  </motion.button>
-                )}
-              </div>
-            </label>
-
-            <div style={styles.filterList}>
-              {allTech.map((item) => {
-                const active = filter === item;
-
-                return (
-                  <motion.button
-                    key={item}
-                    onClick={() => setFilter(item)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    animate={{
-                      background: active ? palette.accent : palette.panelStrong,
-                    }}
-                    transition={{ duration: 0.25 }}
-                    style={{
-                      ...styles.filterButton,
-                      color: active ? (isDark ? "#12171b" : "#f8f4ee") : palette.text,
-                      background: active ? palette.accent : palette.panelStrong,
-                      border: `1px solid ${active ? palette.accent : palette.border}`,
-                      fontWeight: active ? 600 : 400,
-                    }}
-                  >
-                    {item}
-                  </motion.button>
-                );
-              })}
-            </div>
-
-          </motion.aside>
-
-          <div style={styles.projectsColumn}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={filter + search}
-                style={styles.projectGrid}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-              {filtered.map((project, index) => (
+              return (
                 <motion.button
                   key={project.title}
                   type="button"
-                  onClick={() => setSelected(project)}
-                  initial={{ opacity: 0, y: 28 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.08, type: "spring", stiffness: 200, damping: 20 }}
-                  whileHover={{ y: -8, boxShadow: `0 20px 50px ${project.color}25` }}
+                  data-index={index}
+                  ref={(node) => { cardRefs.current[index] = node; }}
+                  onClick={() => openProject(index)}
+                  whileHover={{ y: isActive ? 0 : lift - 6, scale: Math.min(scale + 0.04, 1.1) }}
                   whileTap={{ scale: 0.98 }}
-                  style={{
-                    ...styles.projectCard,
-                    background: palette.panel,
-                    border: `1px solid ${palette.border}`,
-                    boxShadow: palette.shadow,
-                    color: palette.text,
+                  layout
+                  initial={false}
+                  animate={{
+                    scale,
+                    y: lift,
+                    opacity,
+                    filter: `brightness(${isActive ? 1.05 : 0.95}) saturate(${saturation})`,
+                    boxShadow: shadow,
                   }}
+                  transition={{
+                    layout: { type: "spring", stiffness: 260, damping: 24 },
+                    type: "spring",
+                    stiffness: 260,
+                    damping: 24,
+                  }}
+                  style={{
+                    ...styles.sliderCard,
+                    width: `${cardWidth}px`,
+                    minHeight: isMobile ? "23.5rem" : "24.5rem",
+                    borderColor: index === activeIndex ? project.color : palette.border,
+                    scrollSnapAlign: "center",
+                    background: palette.panelStrong,
+                    color: palette.text,
+                    transformOrigin: "center center",
+                  }}
+                  aria-label={`Open ${project.title}`}
                 >
-                  <div style={{ display: "flex", flexDirection: "column", flex: 1, width: "100%" }}>
+                  <div style={{ ...styles.sliderCardIconWrap, background: `linear-gradient(135deg, ${project.color}22, ${project.color}08)` }}>
                     <motion.div
                       style={{
-                        width: "100%",
-                        height: "160px",
-                        borderRadius: "20px",
-                        background: `linear-gradient(135deg, ${project.color}15, ${project.color}30)`,
-                        border: `1.5px solid ${project.color}40`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginBottom: "1.2rem",
-                        overflow: "hidden",
-                        position: "relative",
+                        ...styles.sliderCardIcon,
+                        color: project.color,
+                        borderColor: `${project.color}33`,
+                        background: `${project.color}12`,
                       }}
-                      whileHover={{ scale: 1.02 }}
-                      transition={{ duration: 0.3 }}
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
                     >
-                      <motion.div
-                        style={{
-                          color: project.color,
-                          filter: `drop-shadow(0 4px 12px ${project.color}40)`,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                        animate={{ y: [0, -6, 0] }}
-                        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-                      >
-                        <project.icon size={42} strokeWidth={1.5} />
-                      </motion.div>
-                      <motion.div
-                        style={{
-                          position: "absolute",
-                          width: "100%",
-                          height: "100%",
-                          borderRadius: "20px",
-                          background: `radial-gradient(circle at 30% 30%, ${project.color}20, transparent 70%)`,
-                          pointerEvents: "none",
-                        }}
-                        animate={{ opacity: [0.3, 0.5, 0.3] }}
-                        transition={{ duration: 4, repeat: Infinity }}
-                      />
+                      <project.icon size={48} strokeWidth={1.6} />
                     </motion.div>
+                    <span style={styles.sliderCardIndex}>{String(index + 1).padStart(2, "0")}</span>
+                  </div>
 
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.8rem", marginBottom: "1rem" }}>
+                  <div style={styles.sliderCardBody}>
+                    <div style={styles.carouselCardTopRow}>
                       <span
                         style={{
                           ...styles.projectCategory,
@@ -596,12 +667,9 @@ function Portfolio() {
                       >
                         {project.category}
                       </span>
-                      <span style={{ ...styles.projectIndex, color: palette.subText, fontWeight: 600 }}>
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
                     </div>
 
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                    <div style={{ flex: 1 }}>
                       <h3 style={styles.projectTitle}>{project.title}</h3>
                       <p style={{ ...styles.projectDescription, color: palette.subText }}>
                         {project.description}
@@ -625,53 +693,242 @@ function Portfolio() {
                         ))}
                       </div>
                       <span style={{ ...styles.viewLink, color: palette.subText }}>
-                        View <ChevronRight size={14} />
+                        Click to view <Code size={14} />
                       </span>
                     </div>
                   </div>
                 </motion.button>
-              ))}
-              </motion.div>
-            </AnimatePresence>
+              );
+            })}
+          </div>
 
-            {filtered.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                style={{
-                  ...styles.emptyState,
-                  background: palette.panel,
-                  border: `1px solid ${palette.border}`,
-                  textAlign: "center",
-                  padding: "3rem 2rem",
-                }}
-              >
-                <Search size={32} style={{ color: palette.subText, marginBottom: "1rem", opacity: 0.5 }} />
-                <h3 style={{ ...styles.emptyTitle, color: palette.text }}>No projects matched</h3>
-                <p style={{ color: palette.subText, marginBottom: "1rem" }}>
-                  Try another keyword or clear the filter.
-                </p>
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => { setSearch(""); setFilter("All"); }}
-                  style={{
-                    background: palette.accent,
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "999px",
-                    padding: "0.7rem 1.2rem",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    fontWeight: 500,
-                  }}
-                >
-                  Clear filters
-                </motion.button>
-              </motion.div>
-            ) : null}
+          <div style={styles.sliderFooterControls}>
+            <motion.button
+              type="button"
+              onClick={rotatePrev}
+              whileHover={{ y: -2, scale: 1.05 }}
+              whileTap={{ scale: 0.96 }}
+              animate={{ x: 0 }}
+              transition={{ type: "spring", stiffness: 280, damping: 22 }}
+              style={{
+                ...styles.carouselControlPill,
+                color: palette.text,
+                background: palette.panelStrong,
+                border: `1px solid ${palette.border}`,
+              }}
+            >
+              <ChevronLeft size={16} /> Prev
+            </motion.button>
+
+            <motion.button
+              type="button"
+              onClick={rotateNext}
+              whileHover={{ y: -2, scale: 1.05 }}
+              whileTap={{ scale: 0.96 }}
+              animate={{ x: 0 }}
+              transition={{ type: "spring", stiffness: 280, damping: 22 }}
+              style={{
+                ...styles.carouselControlPill,
+                color: palette.text,
+                background: palette.panelStrong,
+                border: `1px solid ${palette.border}`,
+              }}
+            >
+              Next <ChevronRight size={16} />
+            </motion.button>
           </div>
         </motion.section>
+
+        <AnimatePresence>
+          {selectedProject ? (
+            <motion.div
+              style={{
+                ...styles.modalOverlay,
+                background: palette.overlay,
+              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedProject(null)}
+            >
+              <motion.div
+                onClick={(event) => event.stopPropagation()}
+                initial={{ y: 40, opacity: 0, scale: 0.95 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: 40, opacity: 0, scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                style={{
+                  ...styles.modalCard,
+                  background: palette.panelStrong,
+                  border: `1px solid ${palette.border}`,
+                  boxShadow: palette.shadow,
+                  color: palette.text,
+                }}
+              >
+                <motion.button
+                  onClick={() => setSelectedProject(null)}
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                  style={{
+                    position: "absolute",
+                    top: "1rem",
+                    right: "1rem",
+                    background: palette.panel,
+                    border: `1px solid ${palette.border}`,
+                    borderRadius: "12px",
+                    width: "2.2rem",
+                    height: "2.2rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: palette.subText,
+                    zIndex: 10,
+                  }}
+                >
+                  <span aria-hidden="true">×</span>
+                </motion.button>
+
+                <motion.div
+                  style={{
+                    width: "100%",
+                    height: "220px",
+                    borderRadius: "20px",
+                    background: `linear-gradient(135deg, ${selectedProject.color}15, ${selectedProject.color}30)`,
+                    border: `1.5px solid ${selectedProject.color}40`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: "1.5rem",
+                    overflow: "hidden",
+                    position: "relative",
+                  }}
+                  initial={{ scale: 0.85, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.5, type: "spring" }}
+                >
+                  <motion.div
+                    style={{
+                      color: selectedProject.color,
+                      filter: `drop-shadow(0 6px 20px ${selectedProject.color}50)`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    animate={{ y: [0, -10, 0], rotate: [-2, 2, -2] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    whileHover={{ scale: 1.3 }}
+                  >
+                    <selectedProject.icon size={56} strokeWidth={1.5} />
+                  </motion.div>
+                  <motion.div
+                    style={{
+                      position: "absolute",
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: "20px",
+                      background: `radial-gradient(circle at 30% 30%, ${selectedProject.color}25, transparent 70%)`,
+                      pointerEvents: "none",
+                    }}
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                  />
+                </motion.div>
+
+                <motion.span
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.15 }}
+                  style={{
+                    ...styles.projectCategory,
+                    color: selectedProject.color,
+                    background: `${selectedProject.color}12`,
+                    border: `1px solid ${selectedProject.color}30`,
+                  }}
+                >
+                  {selectedProject.category}
+                </motion.span>
+
+                <motion.h2
+                  style={styles.modalTitle}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  {selectedProject.title}
+                </motion.h2>
+                <motion.p
+                  style={{ ...styles.modalDescription, color: palette.subText }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.25 }}
+                >
+                  {selectedProject.description}
+                </motion.p>
+
+                <motion.div
+                  style={styles.techRow}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  {selectedProject.tech.map((item) => (
+                    <span
+                      key={item}
+                      style={{
+                        ...styles.techChip,
+                        color: palette.accent,
+                        background: palette.chipBg,
+                        border: `1px solid ${palette.border}`,
+                      }}
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </motion.div>
+
+                <motion.div
+                  style={styles.modalActions}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35 }}
+                >
+                  <motion.a
+                    href={selectedProject.github}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    style={{
+                      ...styles.modalLink,
+                      background: palette.panel,
+                      border: `1px solid ${palette.border}`,
+                      color: palette.text,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <Code size={16} /> GitHub
+                  </motion.a>
+                  <motion.a
+                    href={selectedProject.live}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    style={{
+                      ...styles.modalLink,
+                      background: palette.accent,
+                      color: isDark ? "#0f1a2e" : "#f0f5ff",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <ExternalLink size={16} /> Live Demo
+                  </motion.a>
+                </motion.div>
+              </motion.div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
 
         <motion.section
           style={{
@@ -1091,197 +1348,6 @@ function Portfolio() {
           </div>
         </motion.section>
       </section>
-
-      <AnimatePresence>
-        {selected ? (
-          <motion.div
-            style={{
-              ...styles.modalOverlay,
-              background: palette.overlay,
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSelected(null)}
-          >
-            <motion.div
-              onClick={(event) => event.stopPropagation()}
-              initial={{ y: 40, opacity: 0, scale: 0.95 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 40, opacity: 0, scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              style={{
-                ...styles.modalCard,
-                background: palette.panelStrong,
-                border: `1px solid ${palette.border}`,
-                boxShadow: palette.shadow,
-                color: palette.text,
-              }}
-            >
-              <motion.button
-                onClick={() => setSelected(null)}
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.9 }}
-                style={{
-                  position: "absolute",
-                  top: "1rem",
-                  right: "1rem",
-                  background: palette.panel,
-                  border: `1px solid ${palette.border}`,
-                  borderRadius: "12px",
-                  width: "2.2rem",
-                  height: "2.2rem",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  color: palette.subText,
-                  zIndex: 10,
-                }}
-              >
-                <X size={16} />
-              </motion.button>
-
-              <motion.div
-                style={{
-                  width: "100%",
-                  height: "200px",
-                  borderRadius: "20px",
-                  background: `linear-gradient(135deg, ${selected.color}15, ${selected.color}30)`,
-                  border: `1.5px solid ${selected.color}40`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: "1.5rem",
-                  overflow: "hidden",
-                  position: "relative",
-                }}
-                initial={{ scale: 0.85, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.1, duration: 0.5, type: "spring" }}
-              >
-                <motion.div
-                  style={{
-                    color: selected.color,
-                    filter: `drop-shadow(0 6px 20px ${selected.color}50)`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                  animate={{ y: [0, -10, 0], rotate: [-2, 2, -2] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  whileHover={{ scale: 1.3 }}
-                >
-                  <selected.icon size={56} strokeWidth={1.5} />
-                </motion.div>
-                <motion.div
-                  style={{
-                    position: "absolute",
-                    width: "100%",
-                    height: "100%",
-                    borderRadius: "20px",
-                    background: `radial-gradient(circle at 30% 30%, ${selected.color}25, transparent 70%)`,
-                    pointerEvents: "none",
-                  }}
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{ duration: 4, repeat: Infinity }}
-                />
-              </motion.div>
-
-              <motion.span
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.15 }}
-                style={{
-                  ...styles.projectCategory,
-                  color: selected.color,
-                  background: `${selected.color}12`,
-                  border: `1px solid ${selected.color}30`,
-                }}
-              >
-                {selected.category}
-              </motion.span>
-
-              <motion.h2
-                style={styles.modalTitle}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                {selected.title}
-              </motion.h2>
-              <motion.p
-                style={{ ...styles.modalDescription, color: palette.subText }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.25 }}
-              >
-                {selected.description}
-              </motion.p>
-
-              <motion.div
-                style={styles.techRow}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                {selected.tech.map((item) => (
-                  <span
-                    key={item}
-                    style={{
-                      ...styles.techChip,
-                      color: palette.accent,
-                      background: palette.chipBg,
-                      border: `1px solid ${palette.border}`,
-                    }}
-                  >
-                    {item}
-                  </span>
-                ))}
-              </motion.div>
-
-              <motion.div
-                style={styles.modalActions}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35 }}
-              >
-                <motion.a
-                  href={selected.github}
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  style={{
-                    ...styles.modalLink,
-                    background: palette.panel,
-                    border: `1px solid ${palette.border}`,
-                    color: palette.text,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
-                >
-                  <Code size={16} /> GitHub
-                </motion.a>
-                <motion.a
-                  href={selected.live}
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  style={{
-                    ...styles.modalLink,
-                    background: palette.accent,
-                    color: "#fff",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
-                >
-                  <ExternalLink size={16} /> Live Demo
-                </motion.a>
-              </motion.div>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
 
       <motion.footer
         style={{
@@ -1736,11 +1802,150 @@ const styles = {
     fontSize: "0.95rem",
     transition: "all 0.2s ease",
   },
-  closeButton: {
+  sliderSection: {
+    borderRadius: "38px",
+    padding: "1.5rem",
+    marginBottom: "3rem",
+    backdropFilter: "blur(14px)",
+  },
+  carouselHeaderCentered: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+    gap: "0.1rem",
+    marginBottom: "1.2rem",
+  },
+  carouselHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    gap: "1.5rem",
+    flexWrap: "wrap",
+    marginBottom: "1.2rem",
+  },
+  carouselTitle: {
+    fontSize: "clamp(1.8rem, 3vw, 2.7rem)",
+    lineHeight: 1.1,
+    marginTop: "0.4rem",
+    maxWidth: "18ch",
+  },
+  carouselSubtitle: {
+    lineHeight: 1.7,
+    fontSize: "0.98rem",
+    maxWidth: "46ch",
+    marginTop: "0.7rem",
+  },
+  carouselControls: {
+    display: "flex",
+    gap: "0.75rem",
+    flexWrap: "wrap",
+  },
+  carouselControlButton: {
     border: "none",
-    background: "transparent",
+    borderRadius: "999px",
+    padding: "0.8rem 1.3rem",
+    fontSize: "0.95rem",
+    fontWeight: 600,
     cursor: "pointer",
-    padding: "0.6rem 0.2rem",
+    transition: "all 0.2s ease",
+  },
+  sliderTrack: {
+    display: "flex",
+    gap: "1.2rem",
+    overflowX: "auto",
+    scrollBehavior: "smooth",
+    WebkitOverflowScrolling: "touch",
+    scrollbarWidth: "none",
+    msOverflowStyle: "none",
+    paddingTop: "0.25rem",
+    paddingBottom: "0.9rem",
+    userSelect: "none",
+    overscrollBehaviorX: "contain",
+  },
+  sliderFooterControls: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "0.75rem",
+    marginTop: "1rem",
+    flexWrap: "wrap",
+  },
+  sliderCard: {
+    flex: "0 0 auto",
+    position: "relative",
+    borderRadius: "28px",
+    border: "1px solid rgba(255,255,255,0.12)",
+    padding: 0,
+    textAlign: "left",
+    overflow: "hidden",
+    cursor: "pointer",
+    outline: "none",
+    willChange: "transform, opacity, filter",
+  },
+  carouselControlPill: {
+    border: "none",
+    borderRadius: "999px",
+    padding: "0.75rem 1rem",
+    fontSize: "0.92rem",
+    fontWeight: 600,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.45rem",
+    minWidth: "7.5rem",
+    justifyContent: "center",
+    transition: "all 0.2s ease",
+  },
+  sliderCardIconWrap: {
+    position: "relative",
+    width: "100%",
+    height: "58%",
+    overflow: "hidden",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sliderCardIndex: {
+    position: "absolute",
+    top: "1rem",
+    right: "1rem",
+    padding: "0.35rem 0.7rem",
+    borderRadius: "999px",
+    background: "rgba(0,0,0,0.28)",
+    border: "1px solid rgba(255,255,255,0.16)",
+    color: "rgba(255,255,255,0.95)",
+    fontSize: "0.72rem",
+    fontWeight: 700,
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+    backdropFilter: "blur(12px)",
+  },
+  sliderCardIcon: {
+    width: "min(58%, 9rem)",
+    aspectRatio: "1 / 1",
+    borderRadius: "24px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "1px solid rgba(255,255,255,0.16)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+    backdropFilter: "blur(12px)",
+  },
+  sliderCardBody: {
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    padding: "1rem 1.05rem 1.15rem",
+  },
+  carouselCardTopRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "0.75rem",
+    marginBottom: "0.7rem",
   },
   footer: {
     padding: "3rem 2rem",

@@ -1,7 +1,8 @@
 import profile from "../assets/profile.jpg";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { Moon, Sun } from "lucide-react";
 import { getTheme } from "../theme";
 import ThemeTransition from "../components/ThemeTransition";
 
@@ -95,44 +96,44 @@ function Home() {
             width: "2.6rem",
             height: "2.6rem",
             borderRadius: "12px",
-            border: "none",
+            border: `1.5px solid ${palette.accent}`,
             cursor: "pointer",
-            background: isDark
-              ? "linear-gradient(135deg, #1a3a3a, #0d5a5a)"
-              : "linear-gradient(135deg, #fff9e6, #ffe6cc)",
-            color: isDark ? "#00adb5" : "#ff9800",
-            transition: "all 0.3s ease",
-            fontSize: "1.3rem",
-            fontWeight: 600,
+            background: palette.panel,
+            color: palette.accent,
+            transition: "all 0.6s cubic-bezier(0.22, 1, 0.36, 1)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: isDark
-              ? "0 0 16px rgba(0, 173, 181, 0.3), inset 0 0 16px rgba(0, 173, 181, 0.1)"
-              : "0 0 16px rgba(255, 152, 0, 0.3), inset 0 0 16px rgba(255, 152, 0, 0.1)",
-            zIndex: 100,
-            overflow: "hidden",
+            boxShadow: `0 0 12px ${palette.accent}20`,
+            zIndex: 1000,
+            overflow: "visible",
           }}
           title={isDark ? "Light mode" : "Dark mode"}
         >
-          <motion.div
-            key={isDark ? "dark" : "light"}
-            initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            exit={{ opacity: 0, scale: 0.5, rotate: 180 }}
-            transition={{
-              duration: 0.5,
-              ease: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-            }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              position: "absolute",
-            }}
-          >
-            {isDark ? "🌙" : "☀️"}
-          </motion.div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={isDark ? "dark" : "light"}
+              initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              exit={{ opacity: 0, scale: 0.5, rotate: 180 }}
+              transition={{
+                duration: 0.4,
+                ease: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "absolute",
+              }}
+            >
+              {isDark ? (
+                <Moon size={18} strokeWidth={2} />
+              ) : (
+                <Sun size={18} strokeWidth={2} />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </motion.button>
 
         <div style={{ ...styles.mesh, background: palette.mesh }} />
