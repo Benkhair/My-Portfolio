@@ -1350,7 +1350,7 @@ function Portfolio() {
 
         <div style={styles.footerBottom}>
           <p style={{ ...styles.footerCredit, color: palette.subText }}>
-            © 2024 Benkhair Najir. All projects crafted with precision.
+            © 2026 Benkhair Najir. All projects crafted with precision.
           </p>
           <p style={{ ...styles.footerCredit, color: palette.subText }}>
             Computer Engineering Student
