@@ -375,7 +375,7 @@ function Home() {
 
         <div style={styles.footerBottom}>
           <p style={{ ...styles.footerCredit, color: palette.subText }}>
-            © 2024 Benkhair Najir. Designed and built with care.
+            © 2026 Benkhair Najir. Designed and built with care.
           </p>
           <p style={{ ...styles.footerCredit, color: palette.subText }}>
             Based in Philippines
